@@ -1,0 +1,4 @@
+﻿  proj2_client.cpp
+E:\2022full_netprogram_djs\djs_project2\proj2_client\proj2_client\proj2_client.cpp(155,17): warning C4553: “==”: 未使用表达式结果；是否打算使用“=”?
+E:\2022full_netprogram_djs\djs_project2\proj2_client\proj2_client\proj2_client.cpp(157,42): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+  proj2_client.vcxproj -> E:\2022full_netprogram_djs\djs_project2\proj2_client\x64\Debug\proj2_client.exe
