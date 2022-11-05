@@ -1,0 +1,5 @@
+﻿  client.cpp
+D:\djs_project3\djs_project3\client\Project1\client.cpp(12,9): warning C4101: “new_s”: 未引用的局部变量
+D:\djs_project3\djs_project3\client\Project1\client.cpp(13,28): warning C4101: “new_addr”: 未引用的局部变量
+D:\djs_project3\djs_project3\client\Project1\frame.h(61): warning C4172: 返回局部变量或临时变量的地址: fra
+  Project1.vcxproj -> D:\djs_project3\djs_project3\client\x64\Debug\Project1.exe
