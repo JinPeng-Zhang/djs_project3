@@ -1,3 +1,5 @@
 ﻿  server.cpp
-D:\djs_project3\djs_project3\server\Project1\frame.h(61): warning C4172: 返回局部变量或临时变量的地址: fra
+D:\djs_project3\djs_project3\server\Project1\frame.h(48,58): warning C4244: “return”: 从“__int64”转换到“int”，可能丢失数据
+D:\djs_project3\djs_project3\server\Project1\server.cpp(13,9): warning C4101: “new_s”: 未引用的局部变量
+D:\djs_project3\djs_project3\server\Project1\frame.h(45): warning C4172: 返回局部变量或临时变量的地址: fra
   Project1.vcxproj -> D:\djs_project3\djs_project3\server\x64\Debug\Project1.exe

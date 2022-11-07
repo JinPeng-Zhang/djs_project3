@@ -22,10 +22,19 @@ int main() {
 	if (listen(s, 5) == SOCKET_ERROR)
 		printf("error");
 	int szClntAddr = sizeof(new_addr);
-	new_s = accept(s, (SOCKADDR*)&new_addr, &szClntAddr);
+	//new_s = accept(s, (SOCKADDR*)&new_addr, &szClntAddr);
 	fram* fra = initframe(ERR,0x00,NULL);
 	char*  st = (char*)fra;
-	//printf("%d", strlen(st));
-	send(new_s, st, 20,0);
+	/*
+	printf("%#x\n", fra->pro);
+	printf("%x\n", &(fra->version));
+	printf("%x\n", &(fra->MESS_LEN));
+	printf("%x\n", &(fra->MESS));
+	printf("%d\n",strlen(st));
+	for (int i = 0; i < strlen(st); i++)
+		printf("%x %02hhx\n", st+i,*(st+i));
+	printf("%d",get_frame_len(fra));
+	*/
+	//send(new_s, st, get_frame_len(fra),0);
 	return 0;
 }

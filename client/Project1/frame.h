@@ -11,8 +11,8 @@ enum protocol
 	ERR,
 };
 typedef struct frame {
-	unsigned char version = FRAME_VERSION;
 	enum protocol pro;
+	unsigned char version = FRAME_VERSION;
 	unsigned char MESS_LEN;
 	char MESS[MESS_MAX];
 }fram;

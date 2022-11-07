@@ -25,6 +25,6 @@ int main() {
 	char* message = (char*)malloc(sizeof(char) * 20);
 	recv(s, message, 20, 0);
 	fram* fra = (fram*)message;
-	printf("%d", fra->pro);
+	printf("%d", fra->MESS_LEN);
 	return 0;
 }
