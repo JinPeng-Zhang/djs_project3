@@ -23,7 +23,6 @@ bld/
  
 # Roslyn cache directories
 *.ide/
- 
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
@@ -202,3 +201,8 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+####
+*.vsidx
+.suo
+*.db
+*.VSIDX
