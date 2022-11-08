@@ -106,7 +106,6 @@ char* get_query_result(char* chap_mess, char* key) {
 	int N = chap_mess[0];
 	int num = 0;
 	for (int i = 0; i < N/8; i++) {
-
 	}
 	return NULL;
 }
