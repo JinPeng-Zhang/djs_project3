@@ -22,9 +22,32 @@ int main() {
 		printf("connect feiled\n");
 		return 0;
 	}
-	char* message = (char*)malloc(sizeof(char) * 20);
-	recv(s, message, 20, 0);
+	//接收质询报文
+	char* message = (char*)malloc(sizeof(char) * 1500);
+	recv(s, message, 1500, 0);
+	//拆封
 	fram* fra = (fram*)message;
-	printf("%d", fra->MESS_LEN);
+	struct chap* chap1 = (struct chap*)fra->MESS;
+	//参数设置
+	sequence = chap1->sequence;
+	//异或运算
+	char query_result[4];
+	get_query_result((unsigned char*)chap1->mess, key, query_result);
+	//构建ack报文
+	char* ack_mess = creat_chap_ack_mess(query_result);
+	fram* fra_ack = initframe(CHAP, strlen(ack_mess), ack_mess);
+	//发送ack报文
+	send(s, (char*)fra_ack, get_frame_len(fra_ack), 0);
+	//接收报文观察质询是否成功
+	recv(s, message, 1500, 0);
+	fra = (fram*)message;
+	chap1 = (struct chap*)fra->MESS;
+	int chap_success = chap1->mess[0];
+	if (chap_success == 1)printf("chap success");
+	else printf("chap failed");
+	system("pause");
+	while(chap_success) {
+
+	}
 	return 0;
 }
