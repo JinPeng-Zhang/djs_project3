@@ -5,7 +5,14 @@
 #include"frame.h"
 #include"connect_control.h"
 #pragma comment(lib, "WS2_32")
+
 int key = 12345;
+SOCKET s, new_s;
+WSADATA wsaData;
+FILE* Fid, * LogFid;
+int Retval;
+char* frame_recv = (char*)malloc(sizeof(char) * 1500);
+fram* fr;
 
 void ready_fsm();
 void R0_fsm();
@@ -16,14 +23,14 @@ int chap(SOCKET new_s);
 //函数：Init()
 //功能: 初始化，套接字初始化，开启监听，文件函数初始化
 void Init() {
-	WSADATA wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 		printf("WSAStartup() error!");
-	
-
-
 	srand((unsigned)time(NULL));
-
+	Fid = fopen("rx.txt", "wb");
+	if (Fid == NULL) {
+		printf("can`t open file\n");
+		return;
+	}
 
 }
 
@@ -33,6 +40,8 @@ void End() {
 
 }
 
+//函数：chap()
+//功能: 与new_s进行chap质询过程，返回质询结果
 int chap(SOCKET new_s) {
 	/****质询阶段***/
 	struct chap chap0;
@@ -40,14 +49,14 @@ int chap(SOCKET new_s) {
 	//提前计算出结果
 	char query_result[4];
 	get_query_result((unsigned char*)chap0.mess, key, query_result);
+	//生成待发送帧，发送
 	fram* fra = initframe(CHAP, chap1_mess_len + 2, (char*)(&chap0));
 	//get_query_result((unsigned char*)((struct chap*)(fra->MESS))->mess, key, query_result);
 	send(new_s, (char*)fra, get_frame_len(fra), 0);
 	/****接受回应报文***/
-	char* chap_ack = (char*)malloc(sizeof(char) * 1500);
-	recv(new_s, chap_ack, 1500, 0);
+	recv(new_s, frame_recv, 1500, 0);
 	/***结果验证****/
-	fram* fr = (fram*)chap_ack;
+	fr = (fram*)frame_recv;
 	struct chap* chap1 = (struct chap*)fr->MESS;
 	//
 	// 这里应该有序号检查,协议检查,type检查
@@ -64,15 +73,13 @@ int chap(SOCKET new_s) {
 int main() {
 
 	Init();
-	int Retval;
-	SOCKET s,new_s;
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in server_addr, new_addr;
 
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	server_addr.sin_port = htons(1234);
+	server_addr.sin_port = htons(0x1234);
 
 	Retval = bind(s, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
@@ -81,10 +88,47 @@ int main() {
 	int szClintAddr = sizeof(new_addr);
 	new_s = accept(s, (SOCKADDR*)&new_addr, &szClintAddr);
 
+	fd_set read_list;
+	timeval timeout;
+
 	int x = 10;
 	while (x--) {
 		//查看状态
-
+		FD_ZERO(&read_list);
+		FD_SET(new_s, &read_list);
+		timeout.tv_sec = 5;
+		timeout.tv_usec = 0;
+		Retval = select(0, &read_list, NULL, NULL, &timeout);
+		if (Retval == SOCKET_ERROR)
+			break;//what is this?
+		if (Retval == 0) {
+			event = EVENT_TIMEOUT;
+		}else {
+			if (!FD_ISSET(new_s, &read_list)) {
+				continue;
+			}
+			//Retval = recv(new_s, frame_recv, 1500, 0);
+			if (Retval <= 0) {
+				Retval = WSAGetLastError();
+				if (Retval == WSAEWOULDBLOCK)
+					continue;
+				printf("Connection was closed");
+				End();
+			}
+			//fr = (fram*)frame_recv;
+			//判断帧类型，触发事件
+			if(fr->pro == CHAP){}
+			if(fr->pro == FILE_OPT){
+				struct file* file1 = (struct file*)fr->MESS;
+				if (file1->type == DATA) {
+					if (file1->sequence == 0) event = EVENT_RECV0;
+					if (file1->sequence == 1) event = EVENT_RECV1;
+				}
+				/*if (file1->type == ACK) {
+					event = EVENT_RECVACK;
+				}*/
+			}
+		}
 		//动作
 		switch (status) {
 			case UNCHAPED: {
@@ -98,6 +142,7 @@ int main() {
 				{ 
 					printf("chap failed\n"); 
 					closesocket(new_s); 
+					status = READY;
 				}
 				}break;
 			case READY:

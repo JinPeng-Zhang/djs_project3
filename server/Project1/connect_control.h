@@ -15,5 +15,7 @@ enum Event {
 	EVENT_Nothing,
 	EVENT_RECV0,
 	EVENT_RECV1,
+	EVENT_RECVACK,
+	EVENT_TIMEOUT,
 };
 enum Event event = EVENT_Nothing;

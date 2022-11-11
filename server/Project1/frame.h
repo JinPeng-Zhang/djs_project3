@@ -15,10 +15,17 @@ enum protocol
 	CLOSE,
 	ERR,
 };
+
+enum file_type
+{
+	DATA,
+	ACK,
+};
+
 typedef struct frame {
-	int MESS_LEN;
+	unsigned char version = FRAME_VERSION;//已经填入了值
 	enum protocol pro;
-	unsigned char version = FRAME_VERSION;
+	int MESS_LEN;
 	char MESS[MESS_MAX];
 }fram;
 /*
@@ -34,6 +41,13 @@ struct chap {
 	char mess[CHAP_MESS_MAX];
 };
 
+struct file {
+	char type;//DATA or ACK
+	char sequence;//0 or 1
+	char len;//len of data
+	char data[1000];
+};
+
 struct clos
 {
 	char  sequence;
@@ -42,6 +56,9 @@ struct err
 {
 	char type;
 };
+
+//函数:fram* initframe()
+//功能:生成给定类型、消息内容的待发送帧
 fram* initframe(enum protocol pro,int  mess_len,char* mess) {
 	fram fra;
 	fra.pro = pro;
