@@ -131,7 +131,7 @@
     <ClCompile Include="client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="file_opt.h" />
+    <ClInclude Include="connect_control.h" />
     <ClInclude Include="frame.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

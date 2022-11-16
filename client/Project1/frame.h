@@ -1,35 +1,64 @@
 #pragma once
 //frame.h需要包含帧结构体定义和处理函数
-#define FRAME_VERSION 0x01
+#define FRAME_VERSION 0X01
 #include<stdlib.h>
+#include<time.h>
+#include<math.h>
 #define MESS_MAX 1491
 #define CHAP_MESS_MAX MESS_MAX-2
+#define FILE_MESS_MAX MESS_MAX-7
+//#define MAX_INT_NUM 360
 unsigned char  sequence;
+extern char query_result[4];
 int key = 12345;
 enum protocol
 {
-	CHAP = 0x01,
+	CHAP = 0X01,
 	FILE_OPT,
 	CLOSE,
 	ERR,
 };
+
+enum file_type
+{
+	DATA,
+	ACK,
+};
+
 typedef struct frame {
-	int MESS_LEN;
+	unsigned char version = FRAME_VERSION;//已经填入了值
 	enum protocol pro;
-	unsigned char version = FRAME_VERSION;
+	int MESS_LEN;
 	char MESS[MESS_MAX];
 }fram;
+/*
+struct integer {
+	int N;
+	char len_seq[MAX_INT_NUM/8];
+	char int_seq[MAX_INT_NUM];
+};
+*/
 struct chap {
 	unsigned char type;
 	unsigned char  sequence;
 	char mess[CHAP_MESS_MAX];
 };
+
 struct file_opt
 {
 	char type;
 	char filename[20];
 	void* mess;
 };
+
+struct file {
+	char type;//DATA or ACK
+	char sequence;//0 or 1
+	char filesequence;//from 0 to ... 
+	int len;//len of data
+	char data[FILE_MESS_MAX];
+};
+
 struct clos
 {
 	char  sequence;
@@ -38,7 +67,10 @@ struct err
 {
 	char type;
 };
-fram* initframe(enum protocol pro, int mess_len, char* mess) {
+
+//函数:fram* createframe()
+//功能:生成给定类型、消息内容的待发送帧
+fram* createframe(enum protocol pro, int  mess_len, char* mess) {
 	fram fra;
 	fra.pro = pro;
 	fra.MESS_LEN = mess_len;
@@ -48,7 +80,7 @@ fram* initframe(enum protocol pro, int mess_len, char* mess) {
 	return &fra;
 }
 
-void get_query_result(unsigned char* chap_mess, int key,char * query_result) {
+void get_query_result(unsigned char* chap_mess, int key, char* query_result) {
 	int N = chap_mess[0];
 	int num = 0;
 	unsigned char* seq_len = chap_mess + 1;
@@ -64,7 +96,9 @@ void get_query_result(unsigned char* chap_mess, int key,char * query_result) {
 	num = num ^ key;
 	for (int i = 0; i < 4; i++)
 		query_result[i] = num >> i * 8;
+	//return (char*)(&num);
 }
+
 char* creat_chap_ack_mess(char* query_result) {
 	struct chap* chap1 = (struct chap*)malloc(sizeof(struct chap));
 	chap1->type = 0x01;
@@ -76,4 +110,18 @@ char* creat_chap_ack_mess(char* query_result) {
 }
 int get_frame_len(fram* fra) {
 	return ((char*)(fra->MESS) - (char*)fra) + fra->MESS_LEN + 1;
+}
+
+char* creat_file_message(int type, int sequence, int filesequence, int data_len, char* data) {
+	struct file* f = (struct file*)malloc(sizeof(struct file));
+	f->type = type;
+	f->sequence = sequence;
+	f->filesequence = 0;//无效
+	if (data_len > FILE_MESS_MAX - 1) return NULL;
+	f->len = data_len;
+	for (int i = 0; i < data_len; i++) {
+		f->data[i] = data[i];
+	}
+	f->data[data_len] = '\0';
+	return (char*)f;
 }

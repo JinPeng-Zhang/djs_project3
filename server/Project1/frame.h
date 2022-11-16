@@ -6,8 +6,10 @@
 #include<math.h>
 #define MESS_MAX 1491
 #define CHAP_MESS_MAX MESS_MAX-2
+#define FILE_MESS_MAX MESS_MAX-7
 //#define MAX_INT_NUM 360
 unsigned char  sequence;
+extern char query_result[4];
 enum protocol
 {
 	CHAP=0X01,
@@ -44,8 +46,9 @@ struct chap {
 struct file {
 	char type;//DATA or ACK
 	char sequence;//0 or 1
-	char len;//len of data
-	char data[1000];
+	char filesequence;//from 0 to ... 
+	int len;//len of data
+	char data[FILE_MESS_MAX];
 };
 
 struct clos
@@ -57,9 +60,9 @@ struct err
 	char type;
 };
 
-//函数:fram* initframe()
+//函数:fram* createframe()
 //功能:生成给定类型、消息内容的待发送帧
-fram* initframe(enum protocol pro,int  mess_len,char* mess) {
+fram* createframe(enum protocol pro,int  mess_len,char* mess) {
 	fram fra;
 	fra.pro = pro;
 	fra.MESS_LEN = mess_len;
@@ -112,12 +115,12 @@ int set_rand(int rand_nu,int rand_opt,int opt) {
 	return rand_nu-rand_nu%opt;
 }
 
-char* creat_chap_result_mess(int success) {
-	struct chap *chap1 = (struct chap*)malloc(sizeof(struct chap));
-	chap1->type = 0x02;
-	chap1->sequence = sequence;
-	chap1->mess[0] = success;
-	return (char*)chap1;
+char* creat_chap_result_mess(int result) {
+	struct chap *chap2 = (struct chap*)malloc(sizeof(struct chap));
+	chap2->type = 0x02;
+	chap2->sequence = sequence;
+	chap2->mess[0] = result;
+	return (char*)chap2;
 }
 void get_query_result(unsigned char* chap_mess, int key,char* query_result) {
 	int N = chap_mess[0];
@@ -136,4 +139,18 @@ void get_query_result(unsigned char* chap_mess, int key,char* query_result) {
 	for (int i = 0; i < 4; i++)
 		query_result[i] = num >> i * 8;
 	//return (char*)(&num);
+}
+
+char* creat_file_message(int type,int sequence,int filesequence,int data_len,char* data) {
+	struct file *f = (struct file*)malloc(sizeof(struct file));
+	f->type = type;
+	f->sequence = sequence;
+	f->filesequence = 0;//无效
+	if (data_len > FILE_MESS_MAX-1) return NULL;
+	f->len = data_len;
+	for (int i = 0; i < data_len; i++) {
+		f->data[i] = data[i];
+	}
+	f->data[data_len] = '\0';
+	return (char*)f;
 }
