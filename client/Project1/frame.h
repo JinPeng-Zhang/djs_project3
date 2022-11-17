@@ -1,11 +1,11 @@
 #pragma once
 //frame.h需要包含帧结构体定义和处理函数
-#define FRAME_VERSION 0x01
+#define FRAME_VERSION 0x02
 #include<stdlib.h>
 #define MESS_MAX 1491
 #define CHAP_MESS_MAX MESS_MAX-2
 unsigned char  sequence;
-int key = 12345;
+int key = 12346;
 enum protocol
 {
 	CHAP = 0x01,
@@ -24,12 +24,7 @@ struct chap {
 	unsigned char  sequence;
 	char mess[CHAP_MESS_MAX];
 };
-struct file_opt
-{
-	char type;
-	char filename[20];
-	void* mess;
-};
+
 struct clos
 {
 	char  sequence;

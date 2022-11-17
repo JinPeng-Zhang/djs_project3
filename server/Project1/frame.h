@@ -1,6 +1,6 @@
 #pragma once
 //frame.h需要包含帧结构体定义和处理函数
-#define FRAME_VERSION 0X01
+#define FRAME_VERSION 0X02
 #include<stdlib.h>
 #include<time.h>
 #include<math.h>
