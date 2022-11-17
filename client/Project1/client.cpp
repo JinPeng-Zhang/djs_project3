@@ -3,6 +3,9 @@
 #pragma comment(lib, "WS2_32")
 #include"frame.h"
 #include"connect_control.h"
+#include<iostream>
+#include<windows.h>
+using namespace std;
 
 WSADATA wsaData;
 SOCKET s;
@@ -35,6 +38,7 @@ void R1_fsm();
 void SendACK(int towhichframe);
 void ShowMENU();
 void SendCommand(int whichorder);
+void ShowrecvFileDir();
 
 int main() {
 	Init();
@@ -133,6 +137,7 @@ int main() {
 				if (file1->type == DATA) {
 					if (file1->sequence == 0) event = EVENT_RECV0;
 					else if (file1->sequence == 1) event = EVENT_RECV1;
+					else if (file1->sequence == 2) event = EVENT_RECVFILEDIR;
 				}
 				else if (file1->type == ACK) {
 					if (file1->sequence == 0) event = EVENT_RECVACK0;
@@ -359,6 +364,12 @@ void ready_fsm()
 		status = RECV1;
 		break;
 	}
+	case EVENT_RECVFILEDIR: {
+		ShowrecvFileDir();
+		SendACK(2);
+		status = READY;
+		break;
+	}
 	default://也可能是其他情况，待补充
 
 		break;
@@ -441,4 +452,16 @@ void ShowMENU() {
 	printf("1.Upload\n");
 	printf("2.Download\n");
 	printf("3.Show File Directory\n");
+	return;
+}
+
+void ShowrecvFileDir() {
+	printf("\nFileDir Recved:\n");
+	char Dirdata[1500];
+	for (int i = 0; i < file1->len; i++) {
+		Dirdata[i] = file1->data[i];
+	}
+	Dirdata[file1->len] = 0;
+	cout << Dirdata << endl;
+	return;
 }

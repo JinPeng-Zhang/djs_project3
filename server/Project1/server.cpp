@@ -5,6 +5,9 @@
 #include"frame.h"
 #include"connect_control.h"
 #pragma comment(lib, "WS2_32")
+#include<iostream>
+#include<windows.h>
+using namespace std;
 
 int key = 12345;
 SOCKET mainsock, new_s;
@@ -28,6 +31,8 @@ char recvfilesequence = 0;
 
 int a = 0;
 
+char* ShowFileDir();
+void SendFileDirectory();
 void Init();
 void End();
 int chap(SOCKET new_s,char* query_result);
@@ -43,6 +48,7 @@ void R1_fsm();
 void SendACK(int towhichframe);
 
 int main() {
+	//ShowFileDir();
 	Init();
 	mainsock = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in server_addr, new_addr;
@@ -111,6 +117,7 @@ int main() {
 				else if (file1->type == ACK) {
 					if (file1->sequence == 0) event = EVENT_RECVACK0;
 					else if (file1->sequence == 1) event = EVENT_RECVACK1;
+					else if (file1->sequence == 2) event = EVENT_RECVACKDIR;
 				}
 				else if (file1->type == COMMAND) {
 					if (file1->sequence == 0) event = EVENT_RECCOMMAND_DOWNLOAD;
@@ -177,7 +184,7 @@ void ready_fsm()
 		//接收到请求下载命令，发送文件第0报文
 		//TODO:根据mess中的文件名称下载文件
 		printf("Recv Command Dowlaod\n");
-		l = SendFile(0);
+		l = SendFile(0);//发送文件作为ACK
 		if (l < FILE_MESS_MAX) {
 			status = SENDEND;
 		}
@@ -188,8 +195,10 @@ void ready_fsm()
 	}
 	case EVENT_RECCOMMAND_CHECKDIR: {
 		//接收到请求目录命令，查看文件目录，发送
+		//保证目录能一次发完
 		printf("Recv Command CHECKDIR\n");
-		status = READY;
+		SendFileDirectory();//发送文件目录作为ACK
+		status = SENDEND;
 		break;
 	}
 	default://也可能是其他情况，待补充
@@ -255,12 +264,12 @@ void Init() {
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 		printf("WSAStartup() error!");
 	srand((unsigned)time(NULL));
-	fopen_s(&Fid_read, "E:\\2022full_netprogram_djs\\djs_project3\\server\\server_snd.txt", "rb");
+	fopen_s(&Fid_read, "E:\\2022full_netprogram_djs\\djs_project3\\server\\file\\server_snd.txt", "rb");
 	if (Fid_read == NULL) {
 		printf("can`t open file\n");
 		return;
 	}
-	fopen_s(&Fid_write, "E:\\2022full_netprogram_djs\\djs_project3\\server\\server_rx.txt", "wb");
+	fopen_s(&Fid_write, "E:\\2022full_netprogram_djs\\djs_project3\\server\\file\\server_rx.txt", "wb");
 	if (Fid_write == NULL) {
 		printf("can`t open file\n");
 		return;
@@ -340,12 +349,19 @@ void End_fsm()
 		closesocket(new_s);
 		break;
 	}
+	case EVENT_RECVACKDIR: {
+		printf("Recv ACK of Filedirframe.End\n");
+		status = END;
+		closesocket(new_s);
+		break;
+	}
 	case EVENT_TIMEOUT:
 		//超时，重发上一帧
 		RsendFile(10);
 		status = SENDEND;
 		break;
 	}
+
 }
 
 void S0_fsm()
@@ -422,4 +438,61 @@ void RsendFile(int sequence) {
 	else
 		printf("Time out!Rsend frame %d,send %d byte.\n\n", sequence, get_frame_len(fra_filedata));
 	return;
+}
+
+void SendFileDirectory() {
+	char* datasend = ShowFileDir();
+	int len = strlen(datasend);
+	for (int i = 0; i < FILE_MESS_MAX; i++) {
+		resend1->data_resend[i] = datasend[i];
+	}
+	resend1->len = len;//
+	char* file_message = creat_file_message(DATA, 2, 0, len, datasend);
+	fram* fra_filedata = createframe(FILE_OPT, 7 + len, file_message);
+	send(new_s, (char*)fra_filedata, get_frame_len(fra_filedata), 0);
+	printf("Send File Directory,send %d byte.\n\n", get_frame_len(fra_filedata));
+	return;
+}
+
+char* ShowFileDir()
+{
+	WIN32_FIND_DATA  fileAttr;
+	HANDLE  handle;
+	handle = FindFirstFile(TEXT("E:\\2022full_netprogram_djs\\djs_project3\\server\\file\\*"), &fileAttr);
+	char Dirdata[1000];
+	char name[520];
+
+	if (handle == INVALID_HANDLE_VALUE)
+	{
+		cout << "invalid handle value " << GetLastError() << endl;
+	}
+	else
+	{
+		//cout << name << endl;
+		//cout << fileAttr.cFileName << endl; //输出查找到的文件名
+		sprintf(name, "%ws", fileAttr.cFileName);
+		strcpy(Dirdata, name);
+		strcat(Dirdata, "\n");
+		while (FindNextFile(handle, &fileAttr))
+		{
+			sprintf(name, "%ws", fileAttr.cFileName);
+			//cout << name << endl;
+			strcat(Dirdata, name);
+			strcat(Dirdata, "\n");
+			//cout << fileAttr.cFileName << endl; //输出每一个查找到的文件名
+		}
+		//cout << Dirdata << endl;
+		if (GetLastError() == ERROR_NO_MORE_FILES)
+		{
+			//cout << "查找完毕" << endl;
+		}
+		else
+		{
+			cout << "查找过程出现错误" << endl;
+		}
+
+		FindClose(handle);
+	}
+
+	return Dirdata;
 }
