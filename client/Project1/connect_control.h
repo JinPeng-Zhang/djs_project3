@@ -1,9 +1,8 @@
 #pragma once
-#pragma once
 enum Status {
 	Nothing,
 	UNCHAPED,
-	READY,
+	READY,//client准备接收文件
 	RECV0,
 	RECV1,
 	SEND0,//已发送帧0,待收ACK0
@@ -16,7 +15,7 @@ enum Status status = UNCHAPED;
 
 enum Event {
 	EVENT_Nothing,
-	EVENT_RECV0,
+	EVENT_RECV0,//已经接收到帧0，期待帧1
 	EVENT_RECV1,
 	EVENT_RECVACK0,
 	EVENT_RECVACK1,
@@ -25,3 +24,6 @@ enum Event {
 	EVENT_TIMEOUT,
 };
 enum Event event = EVENT_Nothing;
+
+#define download_requst 0
+#define checkfiledir 1

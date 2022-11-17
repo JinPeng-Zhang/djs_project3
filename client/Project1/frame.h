@@ -4,7 +4,8 @@
 #include<stdlib.h>
 #include<time.h>
 #include<math.h>
-#define MESS_MAX 1491
+#define FRAME_MAX 1500
+#define MESS_MAX 1494
 #define CHAP_MESS_MAX MESS_MAX-2
 #define FILE_MESS_MAX MESS_MAX-7
 //#define MAX_INT_NUM 360
@@ -13,7 +14,7 @@ extern char query_result[4];
 int key = 12345;
 enum protocol
 {
-	CHAP = 0X01,
+	CHAP,
 	FILE_OPT,
 	CLOSE,
 	ERR,
@@ -23,12 +24,13 @@ enum file_type
 {
 	DATA,
 	ACK,
+	COMMAND,//only 2 type: download/check file dir
 };
 
 typedef struct frame {
-	unsigned char version = FRAME_VERSION;//已经填入了值
-	enum protocol pro;
-	int MESS_LEN;
+	unsigned char version = FRAME_VERSION;//已经填入了值,1 byte
+	unsigned char pro;//1 byte
+	int MESS_LEN;//4 bytes
 	char MESS[MESS_MAX];
 }fram;
 /*
@@ -38,6 +40,8 @@ struct integer {
 	char int_seq[MAX_INT_NUM];
 };
 */
+
+//帧内容chap
 struct chap {
 	unsigned char type;
 	unsigned char  sequence;
@@ -51,12 +55,13 @@ struct file_opt
 	void* mess;
 };
 
+//帧内容file
 struct file {
-	char type;//DATA or ACK
-	char sequence;//0 or 1
-	char filesequence;//from 0 to ... 
-	int len;//len of data
-	char data[FILE_MESS_MAX];
+	char type;//DATA or ACK ,1 byte
+	char sequence;//0 or 1,1 byte
+	char filesequence;//from 0 to ... ,1 byte
+	int len;//len of data,4 byte
+	char data[FILE_MESS_MAX];//FILE_MESS_MAX=1484 byte
 };
 
 struct clos
@@ -73,11 +78,29 @@ struct err
 fram* createframe(enum protocol pro, int  mess_len, char* mess) {
 	fram fra;
 	fra.pro = pro;
-	fra.MESS_LEN = mess_len;
+	fra.MESS_LEN = mess_len;//mess_len最大是FILE_MESS_MAX+7 or CHAP_MESS_MAX+2
 	for (int i = 0; i < mess_len; i++)
 		fra.MESS[i] = mess[i];
-	fra.MESS[mess_len] = '\0';
+	//fra.MESS[mess_len] = '\0';
 	return &fra;
+}
+
+char* creat_file_message(int type, int sequence, int filesequence, int data_len, char* data) {
+	struct file* f = (struct file*)malloc(sizeof(struct file));
+	f->type = type;
+	f->sequence = sequence;
+	f->filesequence = 0;//无效
+	if (data_len > FILE_MESS_MAX)
+	{
+		printf("data large than file_data[]\n");
+		return NULL;//1484<=1484
+	}
+	f->len = data_len;
+	for (int i = 0; i < data_len; i++) {
+		f->data[i] = data[i];
+	}
+	//f->data[data_len] = '\0';
+	return (char*)f;
 }
 
 void get_query_result(unsigned char* chap_mess, int key, char* query_result) {
@@ -109,19 +132,6 @@ char* creat_chap_ack_mess(char* query_result) {
 	return (char*)chap1;
 }
 int get_frame_len(fram* fra) {
-	return ((char*)(fra->MESS) - (char*)fra) + fra->MESS_LEN + 1;
-}
-
-char* creat_file_message(int type, int sequence, int filesequence, int data_len, char* data) {
-	struct file* f = (struct file*)malloc(sizeof(struct file));
-	f->type = type;
-	f->sequence = sequence;
-	f->filesequence = 0;//无效
-	if (data_len > FILE_MESS_MAX - 1) return NULL;
-	f->len = data_len;
-	for (int i = 0; i < data_len; i++) {
-		f->data[i] = data[i];
-	}
-	f->data[data_len] = '\0';
-	return (char*)f;
+	//return ((char*)(fra->MESS) - (char*)fra) + fra->MESS_LEN;
+	return 6 + fra->MESS_LEN;
 }

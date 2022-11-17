@@ -4,7 +4,7 @@
 #include<stdlib.h>
 #include<time.h>
 #include<math.h>
-#define MESS_MAX 1491
+#define MESS_MAX 1494
 #define CHAP_MESS_MAX MESS_MAX-2
 #define FILE_MESS_MAX MESS_MAX-7
 //#define MAX_INT_NUM 360
@@ -12,7 +12,7 @@ unsigned char  sequence;
 extern char query_result[4];
 enum protocol
 {
-	CHAP=0X01,
+	CHAP,
 	FILE_OPT,
 	CLOSE,
 	ERR,
@@ -22,11 +22,12 @@ enum file_type
 {
 	DATA,
 	ACK,
+	COMMAND,
 };
 
 typedef struct frame {
 	unsigned char version = FRAME_VERSION;//已经填入了值
-	enum protocol pro;
+	unsigned char pro;
 	int MESS_LEN;
 	char MESS[MESS_MAX];
 }fram;
@@ -68,12 +69,32 @@ fram* createframe(enum protocol pro,int  mess_len,char* mess) {
 	fra.MESS_LEN = mess_len;
 	for (int i = 0; i < mess_len; i++)
 		fra.MESS[i] = mess[i];
-	fra.MESS[mess_len] = '\0';
+	//fra.MESS[mess_len] = '\0';
 	return &fra;
 }
-int get_frame_len(fram* fra) {
-	return ((char*)(fra->MESS) - (char*)fra) + fra->MESS_LEN+1;
+
+char* creat_file_message(int type, int sequence, int filesequence, int data_len, char* data) {
+	struct file* f = (struct file*)malloc(sizeof(struct file));
+	f->type = type;
+	f->sequence = sequence;
+	f->filesequence = 0;//无效
+	if (data_len > FILE_MESS_MAX)
+	{
+		printf("data large than file_data[]\n");
+		return NULL;//1484<=1484
+	}
+	f->len = data_len;
+	for (int i = 0; i < data_len; i++) {
+		f->data[i] = data[i];
+	}
+	//f->data[data_len] = '\0';
+	return (char*)f;
 }
+
+int get_frame_len(fram* fra) {
+	return ((char*)(fra->MESS) - (char*)fra) + fra->MESS_LEN;
+}
+
 int set_rand(int rand_nu, int rand_opt, int opt);
 //该函数返回frame中mess字段,prob为整数长度为四字节的概率*100
 int creat_chap_query_mess(struct chap* chap1,int prob) {
@@ -122,6 +143,7 @@ char* creat_chap_result_mess(int result) {
 	chap2->mess[0] = result;
 	return (char*)chap2;
 }
+
 void get_query_result(unsigned char* chap_mess, int key,char* query_result) {
 	int N = chap_mess[0];
 	int num = 0;
@@ -139,18 +161,4 @@ void get_query_result(unsigned char* chap_mess, int key,char* query_result) {
 	for (int i = 0; i < 4; i++)
 		query_result[i] = num >> i * 8;
 	//return (char*)(&num);
-}
-
-char* creat_file_message(int type,int sequence,int filesequence,int data_len,char* data) {
-	struct file *f = (struct file*)malloc(sizeof(struct file));
-	f->type = type;
-	f->sequence = sequence;
-	f->filesequence = 0;//无效
-	if (data_len > FILE_MESS_MAX-1) return NULL;
-	f->len = data_len;
-	for (int i = 0; i < data_len; i++) {
-		f->data[i] = data[i];
-	}
-	f->data[data_len] = '\0';
-	return (char*)f;
 }
